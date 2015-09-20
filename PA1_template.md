@@ -11,7 +11,8 @@ The following questions are being addressed:
 4. Are there differences in activity patterns between weekdays and weekends?
 
 First step is the data loading and filter out the NA step values based rows:
-```{r, echo=TRUE}
+
+```r
   data = read.csv('activity.csv')
   # filter out the NA step value rows
   data = na.omit(data)
@@ -21,7 +22,8 @@ First step is the data loading and filter out the NA step values based rows:
 
 The distribution of the total number of steps taken each day frequencies is the following:
 
-```{r, echo=TRUE}
+
+```r
   #create date categorie and drop the empty values ones
   ds = split(data$steps, data$date, drop=TRUE)
   #apply the sum on the date categories
@@ -31,22 +33,26 @@ The distribution of the total number of steps taken each day frequencies is the 
   hist(ds_sum, xlab='Number of Steps', main = 'Distribution of the total number of steps taken each day', col='blue')
 ```
 
+![plot of chunk unnamed-chunk-2](figure/unnamed-chunk-2-1.png) 
+
 The mean and median of the total number of steps taken per day are computed using the following code:
 
-```{r, echo=TRUE}
+
+```r
   tsd_mean = mean(ds_sum, na.rm=TRUE)
   tsd_median = median(ds_sum, na.rm=TRUE)
 ```
 
 Their values are aproximately equal proving that the  data set are not too spread out:
 
-Mean = **`r format(tsd_mean, scientific=FALSE)`** steps
+Mean = **10766.19** steps
 
-Median = **`r tsd_median`** steps
+Median = **10765** steps
 
 ## What is the average daily activity pattern?
 
-```{r, echo=TRUE}
+
+```r
   ds = split(data$steps, data$interval, drop=TRUE)
   ds_mean = sapply(ds, mean, na.rm=TRUE)
   # create a seq for time serie 24 hours as 5 min serie
@@ -56,22 +62,29 @@ Median = **`r tsd_median`** steps
   # x axis - hourly
   ts1h=seq(strptime('00:00','%H:%M'), strptime('23:59','%H:%M'), 'hour')
   axis.POSIXct(1, at = ts1h, format = "%H:%M", las=2)
+```
+
+![plot of chunk unnamed-chunk-4](figure/unnamed-chunk-4-1.png) 
+
+```r
   # find the index of the maximum value
   idx_max = which.max(ds_mean)
 ```
-The maximum value is **`r max(ds_mean)`** steps at **`r names(idx_max)`** interval.
+The maximum value is **206.1698113** steps at **835** interval.
 
 ## Imputing missing values
-```{r, echo=TRUE}
+
+```r
   #load the data set
   data = read.csv('activity.csv')
   #count NA-s
   dNA = sum(is.na(data$steps))
 ```
-There are **`r dNA`** 'NA' step values.
+There are **2304** 'NA' step values.
 
 The NA step values are replaced with the mean for that 5-minute interval:
-```{r, echo=TRUE}
+
+```r
   #filter out the NA step value rows
   dataClean = na.omit(data)
   #get NAs
@@ -84,25 +97,18 @@ The NA step values are replaced with the mean for that 5-minute interval:
 ```
 
 The column 'steps' numeric values *dsClean* are merged with the former NA values *dataNA* into a new dataframe that is equal to the original dataset but with the missing data filled in:
-```{r, echo=TRUE}
+
+```r
   fillData = rbind(dataClean, dataNA)
 ```
 
 The distribution of the total number of steps taken each day frequencies of this updated dataset is the following:
-```{r, echo=FALSE}
-  ds = split(fillData$steps, fillData$date, drop=TRUE)
-  ds_sum = sapply(ds, sum, na.rm=TRUE)
-  par(yaxs='i', las=1)
-  hist(ds_sum, xlab='Number of Steps', main = 'Distribution of the total number of steps taken each day', col='green')
-  
-  tsd_mean = mean(ds_sum, na.rm=TRUE)
-  tsd_median = median(ds_sum, na.rm=TRUE)
-```
+![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-8-1.png) 
 The new values for mean and median are the following:
 
-Mean = **`r format(tsd_mean, scientific=FALSE)`** steps
+Mean = **10766.19** steps
 
-Median = **`r format(tsd_median, scientific=FALSE)`** steps
+Median = **10766.19** steps
 
 The frequency value for *10000-15000 steps* bin increased above **35** in comparison with **25** when NA based observations were deleted.
 
@@ -111,7 +117,8 @@ The impact of updating the NA observations with the mean for that 5-minute inter
 ## Are there differences in activity patterns between weekdays and weekends?
 
 Create a new factor variable **isWeekend** in the dataset with two levels *weekday* and *weekend* indicating whether a given date is a weekday or weekend day:
-```{r echo=TRUE}
+
+```r
   #create a list with a boolean variable having TRUE in case the processed day is Sat or Sun
   isWeekendl = apply(fillData, 1, function(x) grepl('Sat|Sun', weekdays(as.Date(x[2]))))
   #create a factor variable with two levels: weekday and weekend
@@ -121,23 +128,16 @@ Create a new factor variable **isWeekend** in the dataset with two levels *weekd
   str(wkData)
 ```
 
+```
+## 'data.frame':	17568 obs. of  4 variables:
+##  $ steps    : num  0 0 0 0 0 0 0 0 0 0 ...
+##  $ date     : Factor w/ 61 levels "2012-10-01","2012-10-02",..: 2 2 2 2 2 2 2 2 2 2 ...
+##  $ interval : int  0 5 10 15 20 25 30 35 40 45 ...
+##  $ isWeekend: Factor w/ 2 levels "weekday","weekend": 1 1 1 1 1 1 1 1 1 1 ...
+```
+
 Here is a comparison between average daily activity in weekdays vs. weekends:
 
-```{r echo=FALSE, fig.height=8, fig.width=13}
-  #compute the average number of steps taken, subsetting on isWeekend and interval
-  ds_mean = ds_mean = tapply(wkData$steps, list(wkData$isWeekend, wkData$interval), mean)
-  #ds_mean[1,] are the weekdays, 2nd row has the weekend values
-  # create a seq for time serie 24 hours as 5 min serie
-  ts5m = seq(strptime('00:00','%H:%M'), strptime('23:55','%H:%M'), '5 min')
-  #prepare x axis - hourly
-  ts1h=seq(strptime('00:00','%H:%M'), strptime('23:59','%H:%M'), 'hour')
-  op = par(mfcol=c(2,1))
-  #plot mean time serie
-  plot(ds_mean[1,] ~ ts5m, type='l', main='Average daily activity pattern', xlab='Time', ylab='Mean across weekdays')
-  axis.POSIXct(1, at = ts1h, format = "%H:%M")
-  plot(ds_mean[2,] ~ ts5m, type='l', xlab='Time', ylab='Mean across weekends')
-  axis.POSIXct(1, at = ts1h, format = "%H:%M")
-  par(op)
-```
+![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-10-1.png) 
 
 In the weekends the number of steps is increased proving that people's physical activity is better that during the weekdays.
